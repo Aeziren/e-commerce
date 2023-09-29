@@ -1,0 +1,74 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    <div class="container-fluid ">
+        {% if user.is_authenticated %}
+            <h2>
+                {% if highest_bid.user == user %}
+                    {{ listing.title }}
+                    <i class="fa-regular fa-circle-check fa-lg" style="color: #04bb00;" title="You have the current bid"></i>
+                {% else %}
+                    {{ listing.title }}
+                    <i class="fa-regular fa-circle-xmark fa-lg" style="color: #ff0000;" title="You don't have the current bid"></i>
+                {% endif %}
+            </h2>
+            <form action="{% url 'listings' id=listing.pk %}" method="POST">
+                {% csrf_token %}
+                {% if not watching %}
+                    <input type="submit" class="btn btn-secondary" value="Watch" name="watch" >
+                {% else %}
+                    <input type="submit" class="btn btn-success" value="Watching" name="watching" >
+                {% endif %}
+            </form>
+        {% endif %}
+
+        <a href="{{ listing.url }}"><img src="{{ listing.image }}" style="max-width: 600px; max-height: 400px;"></a>
+        <p><strong>Description:</strong> {{ listing.description }} </p>
+        <p><strong>By:</strong> {{ listing.user }} </p>
+        {% if highest_bid %}
+            <h2><strong> €{{ highest_bid.value }} </strong></h2>
+        {% else %}
+            <h2><strong> €{{ listing.initial_price }} </strong></h2>
+        {% endif %}
+        <br>
+        {% if user.is_authenticated and listing.active %}
+            <form action="{% url 'listings' id=listing.pk %}" method="POST">
+                {% csrf_token %}
+                <label for="bid">Bid:</label>
+                {% if highest_bid %}
+                    <input type="number" name="bid" step="0.01" min="{{ highest_bid.value }}">
+                {% else %}
+                    <input type="number" name="bid" step="0.01" min="{{ listing.initial_price }}">
+                {% endif %}
+                <input type="submit" class="btn btn-primary" name="btn_bid" value="Make Bid!">
+                {% if user == listing.user %}
+                    <input type="submit" class="btn btn-danger" name="btn_close" value="Close Listing">
+                {% endif %}
+            </form>
+        {% endif %}
+        {% if not listing.active %}
+            <p><strong>Listing Closed</strong></p>
+        {% endif %}
+        {% if user.is_authenticated and not listing.active and highest_bid.user == user %}
+            <p style="color: #027500"><strong>You are the winner of this listing!</strong></p>
+        {% endif %}
+        <hr>
+        <h4>Comments:</h4>
+        {% if user.is_authenticated %}
+            <form action="{% url 'listings' id=listing.pk %}" method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <textarea name="comment" id="comment" class="form-control" placeholder="Your comment"></textarea>
+                </div>
+                <input type="submit" class="btn btn-primary" name="btn_comment" value="Post">
+            </form>
+        {% endif %}
+        {% for comment in comments %}
+            <hr>
+            <h6><strong>{{ comment.user }}: </strong></h6>
+            <p>{{ comment.text}}</p>
+            <hr>
+        {% endfor %}
+
+    </div>
+{% endblock %}
